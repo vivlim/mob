@@ -114,7 +114,7 @@ impl Connection {
             return Ok(Some(n));
         }
 
-        let mut buf = [0u8; 8];
+        let mut buf = [0u8; 1];
 
         let bytes = match self.sock.read(&mut buf) {
             Ok(n) => n,
@@ -127,12 +127,15 @@ impl Connection {
             }
         };
 
+        /*
         if bytes < 8 {
             warn!("Found message length of {} bytes", bytes);
             return Err(Error::new(ErrorKind::InvalidData, "Invalid message length"));
         }
+        */
 
-        let msg_len = BigEndian::read_u64(buf.as_ref());
+        // message can be up to 256 bytes
+        let msg_len = BigEndian::read_uint(buf.as_ref(), 1);
         Ok(Some(msg_len))
     }
 
@@ -163,8 +166,9 @@ impl Connection {
         }
 
         let len = buf.len();
-        let mut send_buf = [0u8; 8];
-        BigEndian::write_u64(&mut send_buf, len as u64);
+        let mut send_buf = [0u8; 1];
+        //BigEndian::write_u64(&mut send_buf, len as u64);
+        send_buf[0] = len as u8;
 
         let len = send_buf.len();
         match self.sock.write(&send_buf) {
